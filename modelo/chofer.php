@@ -82,46 +82,18 @@ class Chofer extends Conectar {
     }
 
   
-    // En /modelo/chofer.php
-
-public function eliminar($id) {
-    $conexion = null;
-    try {
-        $conexion = parent::conectar_bd();
-        
-        // Iniciar transacción (opcional pero buena práctica)
-        $conexion->beginTransaction();
-
-        // 1. Desactivar temporalmente las restricciones de clave foránea (CRÍTICO)
-        $conexion->exec("SET FOREIGN_KEY_CHECKS = 0;");
-        
-        // 2. Ejecutar la eliminación del chofer
-        $sql = "DELETE FROM {$this->tabla} WHERE Cedula = :id";
-        $stmt = $conexion->prepare($sql);
-        $stmt->bindParam(":id", $id);
-        $stmt->execute();
-        
-        $filas_afectadas = $stmt->rowCount();
-
-        // 3. Volver a activar las restricciones
-        $conexion->exec("SET FOREIGN_KEY_CHECKS = 1;");
-        
-        $conexion->commit(); // Confirmar la transacción
-        
-        return ["filas_afectadas" => $filas_afectadas];
-
-    } catch (PDOException $e) {
-        if ($conexion && $conexion->inTransaction()) {
-             $conexion->rollBack(); // Revertir si hay error
+    public function eliminar($id) {
+        try {
+            $conexion = parent::conectar_bd();
+            $sql = "DELETE FROM {$this->tabla} WHERE Cedula = :id";
+            $stmt = $conexion->prepare($sql);
+            $stmt->bindParam(":id", $id);
+            $stmt->execute();
+            return ["filas_afectadas" => $stmt->rowCount()];
+        } catch (PDOException $e) {
+            return ["error" => $e->getMessage()];
         }
-        // Asegurarse de reactivar las claves foráneas en caso de error
-        if ($conexion) {
-            $conexion->exec("SET FOREIGN_KEY_CHECKS = 1;");
-        }
-        // Devolver el error real de MySQL (ej: 'Cannot delete or update...')
-        return ["error" => $e->getMessage()];
     }
-}
 }
 ?>
 
